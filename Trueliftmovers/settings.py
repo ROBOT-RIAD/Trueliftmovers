@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
+from celery.schedules import crontab
 
 
 load_dotenv()
@@ -41,6 +43,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
+    'accounts',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -131,4 +139,95 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #####################################################################################################################################
 
 ALLOWED_HOSTS = ['*']
+
+WSGI_APPLICATION = 'Trueliftmovers.wsgi.application'
+ASGI_APPLICATION = 'Trueliftmovers.asgi.application'
+
+
+
 CORS_ORIGIN_ALLOW_ALL = True
+
+
+
+AUTH_USER_MODEL = 'accounts.User'
+
+
+
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "Trueliftmovers.exceptions.custom_exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],  
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        'rest_framework.filters.SearchFilter',
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+    'DEFAULT_PERMISSION_CLASSES': [
+    'rest_framework.permissions.IsAuthenticated',
+],
+'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser', 
+    ),
+}
+
+
+
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Enter token as: **Bearer &lt;your_token&gt;**',
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'DOC_EXPANSION': 'none',
+    'SHOW_REQUEST_HEADERS': True,
+    'VALIDATOR_URL': None,
+}
+
+
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=4),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Optional, adjust as needed
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_BLACKLIST_ENABLED': True,
+    'ROTATE_REFRESH_TOKENS': True,
+}
+
+
+EMAIL_BACKEND = 'accounts.certifi_email_backend.CertifiSMTPBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.getenv("EMAIL")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
+
+
+
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = "Asia/Dhaka"
+
+CELERY_BEAT_SCHEDULE = {
+    "cleanup-expired-otps-every-5-min": {
+        "task": "accounts.tasks.cleanup_expired_otps",
+        "schedule": crontab(minute="*/5"),
+    },
+}
