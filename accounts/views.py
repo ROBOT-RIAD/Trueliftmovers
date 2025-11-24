@@ -1,14 +1,15 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer,CustomTokenObtainPairSerializer,ChangePasswordSerializer,SendOTPSerializer, VerifyOTPSerializer, ResetPasswordSerializer
+from .serializers import RegisterSerializer,CustomTokenObtainPairSerializer,ChangePasswordSerializer,SendOTPSerializer, VerifyOTPSerializer, ResetPasswordSerializer,UserUpdateSerializer,ProfileSerializer
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from .response import success_response
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
-
+from rest_framework.viewsets import ModelViewSet
+from .models import Profile
 #swagger 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -305,8 +306,7 @@ class ForgetPasswordVerifyOTP(APIView):
         return success_response(message="OTP verified successfully.",data={},status_code=status.HTTP_200_OK)
     
 
-
-
+# reset Password
 
 class ForgetPasswordReset(APIView):
     permission_classes = [AllowAny]
@@ -347,3 +347,96 @@ class ForgetPasswordReset(APIView):
         return success_response(message="Password reset successfully.",data={},status_code=status.HTTP_200_OK)
 
 
+
+#User profile update
+
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @swagger_auto_schema(
+        tags=["Profile"],
+        operation_description="Get logged-in user's profile details.",
+        responses={
+            200: ProfileSerializer,
+            401: "Unauthorized"
+        }
+    )
+
+    def get(self, request):
+        serializer = ProfileSerializer(request.user.profile,context ={'request': request})
+        return success_response(
+            message="Profile fetched successfully",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
+
+    @swagger_auto_schema(
+        tags=["Profile"],
+        operation_description="Update logged-in user's profile. Supports partial updates.",
+        request_body=UserUpdateSerializer,
+        responses={
+            200: ProfileSerializer,
+            400: "Validation Error",
+            401: "Unauthorized"
+        }
+    )
+    def patch(self, request):
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+
+        serializer = UserUpdateSerializer(
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+
+        updated_data = ProfileSerializer(
+            request.user.profile,
+            context={'request': request}
+        ).data
+
+        return success_response(
+            message="Profile updated successfully",
+            data=updated_data,
+            status_code=status.HTTP_200_OK
+        )
+
+
+# Delete account
+
+class DeleteAccountAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Delete the logged-in user's account.",
+        responses={
+            200: openapi.Response(
+                description="Account deleted successfully",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "success": openapi.Schema(type=openapi.TYPE_BOOLEAN, example=True),
+                        "message": openapi.Schema(type=openapi.TYPE_STRING, example="Account deleted successfully."),
+                        "data": openapi.Schema(type=openapi.TYPE_OBJECT, example={}),
+                    },
+                ),
+            ),
+            401: "Unauthorized",
+        },
+        tags=["Profile"],
+    )
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+
+        if hasattr(user, 'profile'):
+            user.profile.delete()
+            
+        user.delete()
+        return success_response(
+            message="Account deleted successfully.",
+            data={},
+            status_code=status.HTTP_200_OK
+        )

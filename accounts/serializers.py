@@ -231,7 +231,6 @@ class VerifyOTPSerializer(serializers.Serializer):
 
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField(max_length=4)
     new_password = serializers.CharField(write_only=True)
 
     def validate_new_password(self, value):
@@ -240,16 +239,24 @@ class ResetPasswordSerializer(serializers.Serializer):
     
     def validate(self, attrs):
         email = attrs.get("email")
-        otp = attrs.get("otp")
+        new_password = attrs.get("new_password")
+
+        if not new_password or len(new_password) < 6:
+            raise serializers.ValidationError({"new_password": "Password must be at least 6 characters long."})
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise serializers.ValidationError({"email": "User not found."})
-        try:
-            otp_obj = PasswordReserOTP.objects.get(user=user, otp=otp, is_verified=True)
-        except PasswordReserOTP.DoesNotExist:
-            raise serializers.ValidationError({"otp": "Invalid OTP."})
+        
+        otp_obj = PasswordReserOTP.objects.filter(
+            user=user,
+            is_verified=True
+        ).first()
+        
+        if not otp_obj:
+            raise serializers.ValidationError({"otp": "Invalid or unverified OTP."})
+
         attrs["user"] = user
         attrs["otp_obj"] = otp_obj
         return attrs
@@ -262,4 +269,89 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.save()
         otp_obj.delete()
         return user
+
+
+
+#Profile 
+
+class ProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email',read_only = True)
+    role = serializers.CharField(source ='user.role', read_only = True)
+
+    class Meta:
+        model = Profile
+        fields = ['full_name', 'phone', 'address', 'country', 'email', 'role','image']
+        read_only_fields = ['email', 'role']
+
+
+
+class UserUpdateSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+    full_name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    address = serializers.CharField(required=False, allow_blank=True)
+    country = serializers.CharField(required=False, allow_blank=True)
+    image = serializers.ImageField(required=False)
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+
+        email = attrs.get('email')
+        if email:
+            if not User.objects.filter(id=user.id).exists():
+                raise serializers.ValidationError({"email": "User not found."})
+            if User.objects.exclude(id=user.id).filter(email=email).exists():
+                raise serializers.ValidationError({"email": "Email is already in use."})
+
+        
+        
+        full_name = attrs.get('full_name')
+        if full_name and len(full_name) < 2:
+            raise serializers.ValidationError({"full_name": "Full name must be at least 2 characters."})
+        
+
+    
+        phone = attrs.get('phone')
+        if phone:
+            phone = phone.strip()
+            if not phone.startswith("+"):
+                raise serializers.ValidationError({"phone": "Phone number must start with a country code (e.g., +1, +44, +880)."})
+            digits = phone[1:]
+            if not digits.isdigit():
+                raise serializers.ValidationError({"phone": "Phone number must contain digits only after the country code."})
+
+            country_code = digits[:3]
+            number_part = digits[len(country_code):]
+
+            if len(number_part) < 6:
+                raise serializers.ValidationError({"phone": "Phone number must contain a valid number after the country code (minimum 6 digits)."})
+            if not (8 <= len(digits) <= 20):
+                raise serializers.ValidationError({"phone": "Phone number must be 8–20 digits (excluding +)."})
+
+        country = attrs.get('country')
+        if country and not country.replace(" ", "").isalpha():
+            raise serializers.ValidationError({"country": "Country must contain letters only."})
+
+        return attrs
+
+    def update(self, instance, validated_data):
+
+        if 'email' in validated_data:
+            instance.email = validated_data.get('email', instance.email)
+            instance.save()
+
+        profile = instance.profile
+        profile.full_name = validated_data.get('full_name', profile.full_name)
+        profile.phone = validated_data.get('phone', profile.phone)
+        profile.address = validated_data.get('address', profile.address)
+        profile.country = validated_data.get('country', profile.country)
+
+        if 'image' in validated_data:
+            profile.image = validated_data['image']
+
+        profile.save()
+        return instance
+
+
+
 

@@ -44,7 +44,7 @@ services:
   # Celery Worker Service
   celery:
     build: .
-    command: celery -A Trueliftmove worker --loglevel=info --concurrency=4 --logfile=tmp/celery-worker.log
+    command: celery -A Trueliftmovers worker --loglevel=info --concurrency=4 --logfile=tmp/celery-worker.log
     depends_on:
       - web   
       - redis
@@ -54,7 +54,7 @@ services:
   # Celery Beat Service (for periodic tasks)
   celery-beat:
     build: .
-    command: celery -A Trueliftmove beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A Trueliftmovers beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - web   
       - redis

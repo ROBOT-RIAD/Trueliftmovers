@@ -1,3 +1,14 @@
+# Base image
+FROM python:3.12-slim
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV POETRY_VIRTUALENVS_CREATE=false
+ENV DJANGO_SETTINGS_MODULE=Trueliftmovers.settings
+
+WORKDIR /app
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ make build-essential \
@@ -19,7 +30,7 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput || true
 
 # Expose Django port
-EXPOSE 8000
+EXPOSE 8001
 
 # Default command (start Daphne server)
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "projectile.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8001", "projectile.asgi:application"]

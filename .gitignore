@@ -105,3 +105,6 @@ coverage.xml
 secrets.json
 
 # End of .gitignore
+
+tmp/
+temp/
