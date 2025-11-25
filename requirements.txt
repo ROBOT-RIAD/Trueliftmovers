@@ -10,6 +10,7 @@ colorama==0.4.6
 cron_descriptor==2.0.6
 Django==5.2.7
 django-celery-beat==2.8.1
+django-cors-headers==4.9.0
 django-filter==25.2
 django-timezone-field==7.1
 django_celery_results==2.6.0
