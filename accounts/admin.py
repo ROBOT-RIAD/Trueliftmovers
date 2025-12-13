@@ -1,14 +1,23 @@
 from django.contrib import admin
 from .models import User,Profile,PasswordReserOTP
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Register your models here.
 
 #admin
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     list_display = ["id","email" ,"role"]
     search_fields =["email","role"]
     list_filter =["role"]
+
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ("Custom Fields", {"fields": ("role",)}),
+    )
+
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ("Custom Fields", {"fields": ("role",)}),
+    )
 
 
 

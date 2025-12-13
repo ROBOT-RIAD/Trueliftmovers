@@ -37,6 +37,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,6 +55,11 @@ INSTALLED_APPS = [
     'adminapi',
     'userapi',
     'TermdAndPrivacy',
+    'support',
+    'Channel',
+    'truck',
+    'booking',
+    'pricemanagement',
 ]
 
 MIDDLEWARE = [
@@ -158,6 +164,12 @@ ASGI_APPLICATION = 'Trueliftmovers.asgi.application'
 
 CORS_ORIGIN_ALLOW_ALL = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5179",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+
 
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -189,6 +201,7 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
+    'DEFAULT_API_URL': 'http://localhost:8000',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
@@ -243,3 +256,14 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
 }
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
+
