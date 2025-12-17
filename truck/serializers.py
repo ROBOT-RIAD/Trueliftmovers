@@ -54,7 +54,14 @@ class TruckSerializer(serializers.ModelSerializer):
         # ---------- PHONE NUMBER ----------
         phone = attrs.get('driver_phone_number')
         if phone:
-            if not phone.isdigit():
+            phone = phone.strip()
+
+            if not phone.startswith("+"):
+                raise serializers.ValidationError({"phone": "Phone number must start with a country code (e.g., +1, +44, +880)."})
+            
+            digits = phone[1:]
+
+            if not digits.isdigit():
                 raise serializers.ValidationError("Driver phone number must be digits only.")
             if len(phone) < 6:
                 raise serializers.ValidationError("Driver phone number is too short.")

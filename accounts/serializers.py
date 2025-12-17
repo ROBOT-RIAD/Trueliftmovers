@@ -285,6 +285,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 
+
+
 class UserUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     full_name = serializers.CharField(required=False, allow_blank=True)
@@ -351,6 +353,9 @@ class UserUpdateSerializer(serializers.Serializer):
 
         profile.save()
         return instance
+
+
+
 
 
 

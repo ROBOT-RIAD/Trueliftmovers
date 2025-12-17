@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from .serializers import SupportSerializer
 from accounts.response import success_response
 from accounts.permissions import IsUserRole
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 #swagger
@@ -15,6 +16,7 @@ from drf_yasg import openapi
 
 class SupportAPIView(APIView):
     permission_classes = [IsUserRole]
+    parser_classes=[MultiPartParser,FormParser]
 
     @swagger_auto_schema(
         operation_description="Create a new support request",

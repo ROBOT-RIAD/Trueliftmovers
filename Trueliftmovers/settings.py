@@ -201,7 +201,7 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
-    'DEFAULT_API_URL': 'http://localhost:8000',
+    'DEFAULT_API_URL': 'https://sacred-renewing-dove.ngrok-free.app',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',

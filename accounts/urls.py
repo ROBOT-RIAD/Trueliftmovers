@@ -5,8 +5,6 @@ from .views import RegisterView,LoginAPIView,CustomTokenRefresView,ChangePasswor
 
 
 
-
-
 urlpatterns = [
     #User Authentication Url
     path('register/', RegisterView.as_view(), name='register'),
