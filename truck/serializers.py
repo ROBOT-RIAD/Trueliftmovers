@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from .models import Truck
+from .models import Truck, PriceManagement ,MoversManagements
 import datetime
-import os
 
 
 class TruckSerializer(serializers.ModelSerializer):
@@ -90,4 +89,74 @@ class TruckSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+
+class PriceManagementsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PriceManagement
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+
+    def validate(self, attrs):
+        minimum_distance = attrs.get('minimum_distance')
+        minimum_charge = attrs.get('minimum_charge')
+        unite_price = attrs.get('unite_price')
+
+        if minimum_distance <= 0:
+            raise serializers.ValidationError("Minimum distance must be greater than 0")
+
+        if minimum_charge < 0:
+            raise serializers.ValidationError("Minimum charge cannot be negative")
+
+        if unite_price < 0:
+            raise serializers.ValidationError("Unit price cannot be negative")
+
+        return attrs
+
+    def create(self, validated_data):
+        return PriceManagement.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance
+
+
+
+class MoversManagemnetSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = MoversManagements
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+    
+    def validate(self, attrs):
+
+        movers_number = attrs.get('movers_number')
+        hour_rate = attrs.get('hour_rate')
+
+        if movers_number is not None and movers_number <= 0:
+            raise serializers.ValidationError({
+                "movers_number": "Movers number must be greater than 0."
+            })
+        
+
+        if hour_rate is not None and hour_rate <= 0:
+            raise serializers.ValidationError({
+                "hour_rate": "Hour rate must be greater than 0."
+            })
+        
+
+        return attrs
+
+    def create(self, validated_data):
+        return MoversManagements.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance
 

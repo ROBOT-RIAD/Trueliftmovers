@@ -33,7 +33,6 @@ class Profile(models.Model):
 
 
 
-
 class PasswordReserOTP(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     otp = models.CharField(max_length=4)

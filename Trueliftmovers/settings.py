@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     'Channel',
     'truck',
     'booking',
-    'pricemanagement',
+    'payment'
 ]
 
 MIDDLEWARE = [
@@ -201,7 +201,7 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
-    'DEFAULT_API_URL': 'https://sacred-renewing-dove.ngrok-free.app',
+    # 'DEFAULT_API_URL': 'https://sacred-renewing-dove.ngrok-free.app',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
@@ -266,4 +266,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+GOOGLEMAP = os.getenv("GOOGLEMAP")
+
+
+STRIPE_SECRET_KEY=os.getenv("STRIPE_SECRET_KEY")
+
+STRIPE_WEBHOOK_SECRET=os.getenv("STRIPE_WEBHOOK_SECRET")
 

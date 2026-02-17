@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Support
-from .tasks import send_support_notification,send_support_realtime_notification
+from .tasks import send_support_notification
 from notifications.tasks import create_notification_task
 
 
@@ -38,27 +38,12 @@ class SupportSerializer(serializers.Serializer):
             "text": support.text,
             "resolved": support.resolved,
             "created_at": str(support.created_at),
-        }
+        },
+        broadcast_user=False,
+        broadcast_admin=True
         )
 
-        send_support_notification.delay(support.id)
+        send_support_notification.delay(support.id,user.email)
 
-        # send_support_realtime_notification.delay(
-        #     user_id=user.id,
-        #     support_id=support.id,
-        #     title="Support Request Submitted",
-        #     body=f"You submitted a support request: {support.title}",
-        #     data={
-        #         "id": support.id,
-        #         "title": support.title,
-        #         "text": support.text,
-        #         "resolved": support.resolved,
-        #         "created_at": str(support.created_at),
-        #         "user_id": user.id,
-        #         "full_name": getattr(user.profile, "full_name", user.username),
-        #         "image": user.profile.image.url if getattr(user, "profile", None) and getattr(user.profile, "image", None) else None
-        #     },
-        #     event_type="support_created",
-        #     broadcast_admin=True
-        # )
         return support
+    
