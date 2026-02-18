@@ -8,6 +8,8 @@ from decimal import Decimal
 from django.shortcuts import get_object_or_404
 from .tasks import send_booking_email
 from notifications.tasks import create_notification_task
+from accounts.models import User, Profile
+from payment.models import Payment
 
 
 
@@ -182,15 +184,46 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
 
 
+class UserNestedSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source='profile.full_name', allow_blank=True, required=False)
+    phone = serializers.CharField(source='profile.phone', allow_blank=True, required=False)
+    address = serializers.CharField(source='profile.address', allow_blank=True, required=False)
+    country = serializers.CharField(source='profile.country', allow_blank=True, required=False)
+    image = serializers.ImageField(source='profile.image', allow_null=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['email', 'full_name', 'phone', 'address', 'country', 'image']
+
+
+
+class TruckNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Truck
+        fields = ['truck_number_plate', 'truck_size', 'truck_capacity', 'driver_name', 'driver_phone_number']
+
+
+class PaymentNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id','type_payment','amount','currency','status','is_paid','paid_at','created_at','updated_at',]
+
+
 
 class BookingGetSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
-    truck = serializers.StringRelatedField()
+    user = UserNestedSerializer(read_only=True)
+    truck = TruckNestedSerializer(read_only=True)
+    payments = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
-        fields = ["id","user","truck","preference_track","movers","pickup_time","pickup_address","pickup_lat","pickup_lng","drop_off_address","drop_lat","drop_lng","movable_items","initial_price","final_price","movers_total","status","start_time","end_time","truck_payment_status","admin_note","mover_payment_status","overview_polyline","distance_meter","duration_second","created_at","updated_at", 
+        fields = ["id","user","truck","preference_track","movers","pickup_time","pickup_address","pickup_lat","pickup_lng","drop_off_address","drop_lat","drop_lng","movable_items","initial_price","final_price","movers_total","status","start_time","end_time","truck_payment_status","admin_note","mover_payment_status","overview_polyline","distance_meter","duration_second","payments","created_at","updated_at", 
         ]
+    def get_payments(self, obj):
+        payments = obj.payments.all()
+        if payments.exists():
+            return PaymentNestedSerializer(payments, many=True).data
+        return None
 
 
 
@@ -295,7 +328,6 @@ class BookingRejectSerializer(serializers.ModelSerializer):
 
         return instance
     
-
 
 
 class BookingAgreementSerializer(serializers.ModelSerializer):

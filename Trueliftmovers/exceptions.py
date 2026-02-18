@@ -54,15 +54,47 @@ def _error(type, message, status_code):
 
 
 
+# def flatten_errors(errors):
+#         if isinstance(errors, dict):
+#             messages = []
+#             for field, msgs in errors.items():
+#                 if isinstance(msgs, list):
+#                     messages.append(f"{', '.join(msgs)}")
+#                 else:
+#                     messages.append(f"{msgs}")
+#             return "; ".join(messages)
+#         elif isinstance(errors, list):
+#             return "; ".join(errors)
+#         return str(errors)
+
+
 def flatten_errors(errors):
-        if isinstance(errors, dict):
-            messages = []
-            for field, msgs in errors.items():
-                if isinstance(msgs, list):
-                    messages.append(f"{', '.join(msgs)}")
-                else:
-                    messages.append(f"{msgs}")
-            return "; ".join(messages)
-        elif isinstance(errors, list):
-            return "; ".join(errors)
-        return str(errors)
+    messages = []
+
+    if isinstance(errors, dict):
+        for field, msgs in errors.items():
+            if isinstance(msgs, list):
+                for msg in msgs:
+                    if isinstance(msg, dict):
+                        # If nested dict, extract values
+                        messages.append(
+                            ", ".join(str(v) for v in msg.values())
+                        )
+                    else:
+                        messages.append(str(msg))
+            elif isinstance(msgs, dict):
+                messages.append(flatten_errors(msgs))
+            else:
+                messages.append(str(msgs))
+
+    elif isinstance(errors, list):
+        for msg in errors:
+            if isinstance(msg, dict):
+                messages.append(flatten_errors(msg))
+            else:
+                messages.append(str(msg))
+    else:
+        messages.append(str(errors))
+
+    return "; ".join(messages)
+

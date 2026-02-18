@@ -12,7 +12,9 @@ def create_notification_task(user_id, title, body, data=None,broadcast_admin=Fal
             user=user,
             title=title,
             body=body,
-            data=data or {}
+            data=data or {},
+            admin_notification=broadcast_admin,
+            user_notification=broadcast_user
         )
         if broadcast_user:
             user_id = user_id

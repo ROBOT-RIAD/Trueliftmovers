@@ -1,7 +1,7 @@
 from django.urls import include, path
 from support.views import SupportAPIView
 from notifications.views import NotificationListAPIView,NotificationReadUpdateAPIView
-from booking.views import BookingListCreateView,RejectBookingView,CreateBookingAgreementView,BookingAgreementDetailView,BookingEndRequestView
+from booking.views import BookingListCreateView,RejectBookingView,CreateBookingAgreementView,BookingAgreementDetailView,BookingEndRequestView,BookingRetrieveAPIView
 
 from payment.views import CreateCheckoutSessionView, PaymentSuccessView
 
@@ -17,6 +17,7 @@ urlpatterns = [
    path("bookings/", BookingListCreateView.as_view(), name="booking-list-create"),
    path('bookings/reject/<int:booking_id>/',RejectBookingView.as_view(),name='booking-reject'),
    path("bookings/end-request/<int:booking_id>/",BookingEndRequestView.as_view(),name="booking-end-request"),
+   path('bookings/<int:booking_id>/', BookingRetrieveAPIView.as_view(), name='booking-retrieve'),
 
 
    path('agreements/create/',CreateBookingAgreementView.as_view(),name='create-booking-agreement'),

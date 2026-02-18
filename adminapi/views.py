@@ -163,7 +163,7 @@ class UserListAPIView(APIView):
         operation_summary="List all users",
         operation_description="Admin-only: Get a list of all users with their most recent booking",
         responses={200: UserSerializer(many=True)},
-        tags=["Users"]
+        tags=["Users Management"]
     )
     def get(self, request):
         users = User.objects.filter(role='user').order_by('-date_joined')

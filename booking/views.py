@@ -10,26 +10,107 @@ from .models import Booking,BookingAgreement
 from .serializers import BookingCreateSerializer,BookingGetSerializer,BookingAdminUpdateSerializer,BookingRejectSerializer,BookingAgreementSerializer,BookingstartendSerializer,BookingEndRequesttendSerializer
 from accounts.response import success_response
 from rest_framework.parsers import MultiPartParser,FormParser
-from accounts.permissions import IsAdminRole
+from accounts.permissions import IsAdminRole,IsUserRole
+from django.utils.dateparse import parse_date
+from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.pagination import PageNumberPagination
+
 
 # Create your views here.
 
 class BookingListCreateView(APIView):
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsUserRole()]
+        return [IsAuthenticated()]
 
     @swagger_auto_schema(
         operation_summary="Get booking list",
         operation_description="Get all bookings of the logged-in user",
+        manual_parameters=[
+            openapi.Parameter(
+                'date',
+                openapi.IN_QUERY,
+                description="Filter bookings by specific date (YYYY-MM-DD)",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+            openapi.Parameter(
+                'status',
+                openapi.IN_QUERY,
+                description="Filter by booking status",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+            openapi.Parameter(
+                'truck_payment_status',
+                openapi.IN_QUERY,
+                description="Filter by truck payment status (true/false)",
+                type=openapi.TYPE_BOOLEAN,
+                required=False
+            ),
+            openapi.Parameter(
+                'mover_payment_status',
+                openapi.IN_QUERY,
+                description="Filter by mover payment status (true/false)",
+                type=openapi.TYPE_BOOLEAN,
+                required=False
+            ),
+            openapi.Parameter(
+                'page',
+                openapi.IN_QUERY,
+                description="Page number",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+        ],
         responses={200: BookingGetSerializer(many=True)},
         tags=["Booking"]
     )
     def get(self, request):
-        bookings = Booking.objects.filter(user=request.user).order_by("-created_at")
-        serializer = BookingGetSerializer(bookings, many=True)
+        date_str = request.query_params.get('date', None)
+        status_filter = request.query_params.get('status')
+        truck_payment_filter = request.query_params.get('truck_payment_status')
+        mover_payment_filter = request.query_params.get('mover_payment_status')
+
+        if request.user.role == "admin":
+            bookings = Booking.objects.all().order_by("-created_at")
+            
+            q_filter = Q()
+            if date_str:
+                filter_date = parse_date(date_str)
+                if filter_date:
+                    q_filter &= Q(created_at__date=filter_date)
+            if status_filter:
+                q_filter &= Q(status=status_filter)
+            if truck_payment_filter is not None:
+                truck_payment_bool = truck_payment_filter.lower() == 'true'
+                q_filter &= Q(truck_payment_status=truck_payment_bool)
+            if mover_payment_filter is not None:
+                mover_payment_bool = mover_payment_filter.lower() == 'true'
+                q_filter &= Q(mover_payment_status=mover_payment_bool)
+            
+            bookings = bookings.filter(q_filter)
+        else:
+            ten_days_ago = timezone.now() - timedelta(days=10)
+            bookings = Booking.objects.filter(user=request.user,pickup_time__gte=ten_days_ago).order_by("-created_at")
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        paginated_bookings = paginator.paginate_queryset(bookings, request)
+        serializer = BookingGetSerializer(paginated_bookings, many=True)
+        paginated_data = {
+            "count": paginator.page.paginator.count,
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
+            "results": serializer.data
+        }
         return success_response(
             message="Booking list retrieved successfully",
-            data=serializer.data
+            data=paginated_data
         )
     
     @swagger_auto_schema(
@@ -57,6 +138,29 @@ class BookingListCreateView(APIView):
             data=response_serializer.data,
             status_code=status.HTTP_201_CREATED
         )
+
+
+
+class BookingRetrieveAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        operation_summary="Retrieve a single booking",
+        operation_description="Get a single booking by ID. Users can only view their own bookings, Admin can view all.",
+        responses={200: BookingGetSerializer()},
+        tags=["Booking"]
+    )
+    def get(self, request, booking_id):
+        if request.user.role == "admin":
+            booking = get_object_or_404(Booking, id=booking_id)
+        else:
+            booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+
+        serializer = BookingGetSerializer(booking)
+        return success_response(
+            message="Booking fetched successfully",
+            data=serializer.data
+        )
+    
 
 
 

@@ -9,6 +9,8 @@ class Notification(models.Model):
     body = models.TextField()
     data = models.JSONField(blank=True, null=True)
     read = models.BooleanField(default=False)
+    admin_notification = models.BooleanField(default=False,blank=True, null=True)
+    user_notification = models.BooleanField(default=False,blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

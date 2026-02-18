@@ -61,9 +61,9 @@ class NotificationListAPIView(APIView):
     def get(self, request):
         user = request.user
         if user.role == "admin":
-            notifications = Notification.objects.all().order_by('-created_at')
+            notifications = Notification.objects.filter(admin_notification=True).order_by("-created_at")
         else:
-            notifications = Notification.objects.filter(user=user).order_by('-created_at')
+            notifications = Notification.objects.filter(user=user,user_notification=True).order_by("-created_at")
 
         serializer = NotificationSerializer(notifications, many=True)
         return success_response(

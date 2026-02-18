@@ -166,6 +166,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5179",
+    "https://sacred-renewing-dove.ngrok-free.app"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -201,7 +202,7 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
-    # 'DEFAULT_API_URL': 'https://sacred-renewing-dove.ngrok-free.app',
+    'DEFAULT_API_URL': 'https://sacred-renewing-dove.ngrok-free.app',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
