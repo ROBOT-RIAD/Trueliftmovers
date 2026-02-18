@@ -74,3 +74,47 @@ class BouncieToken(models.Model):
             },
         )
         return obj
+
+
+# ---------------------------------------------------------------------------
+# Webhook event storage
+# ---------------------------------------------------------------------------
+
+class VehicleEvent(models.Model):
+    """
+    Stores every incoming Bouncie webhook event.
+    tripData events hold real-time GPS coordinates;
+    other events (tripStart, tripEnd, deviceConnect, etc.) are also stored.
+    """
+    EVENT_TYPES = [
+        ('tripData',          'Trip Data'),
+        ('tripStart',         'Trip Start'),
+        ('tripEnd',           'Trip End'),
+        ('tripMetrics',       'Trip Metrics'),
+        ('deviceConnect',     'Device Connect'),
+        ('deviceDisconnect',  'Device Disconnect'),
+        ('battery',           'Battery'),
+        ('mil',               'MIL'),
+        ('vinChange',         'VIN Change'),
+        ('applicationGeoZone','Application Geo-Zone'),
+        ('userGeoZone',       'User Geo-Zone'),
+    ]
+
+    imei            = models.CharField(max_length=20, db_index=True)
+    event_type      = models.CharField(max_length=30, choices=EVENT_TYPES, db_index=True)
+    transaction_id  = models.CharField(max_length=100, blank=True, null=True)
+    payload         = models.JSONField()          # full raw webhook payload
+    # Denormalised live-location fields (only set for tripData)
+    lat             = models.FloatField(null=True, blank=True)
+    lon             = models.FloatField(null=True, blank=True)
+    speed           = models.FloatField(null=True, blank=True)
+    heading         = models.FloatField(null=True, blank=True)
+    received_at     = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = 'Vehicle Event'
+        verbose_name_plural = 'Vehicle Events'
+        ordering = ['-received_at']
+
+    def __str__(self):
+        return f"{self.event_type} | {self.imei} | {self.received_at:%Y-%m-%d %H:%M:%S}"

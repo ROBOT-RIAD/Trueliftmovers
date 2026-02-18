@@ -283,3 +283,4 @@ BOUNCIE_CLIENT_ID = os.getenv("CLIENT_ID", "")
 BOUNCIE_CLIENT_SECRET = os.getenv("CLIENT_SECRET", "")
 BOUNCIE_REDIRECT_URI = os.getenv("REDIRECT_URLS", "http://localhost:8004/callback/")
 BOUNCIE_API_BASE_URL = "https://api.bouncie.dev/v1"
+BOUNCIE_WEBHOOK_KEY = os.getenv("API_KEY", "")  # Validates incoming webhook requests

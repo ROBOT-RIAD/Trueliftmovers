@@ -1,15 +1,22 @@
 import secrets
 import requests
+import logging
 
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsAdminRole
 from .models import BouncieToken
+from . import bouncie as bouncie_service
+from .bouncie import BouncieNotAuthorized, BouncieAPIError
+from . import webhook as bouncie_webhook
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Bouncie OAuth2 constants
@@ -131,3 +138,194 @@ class BouncieCallbackView(APIView):
             {"message": "Bouncie authorization successful. Access token stored."},
             status=status.HTTP_200_OK,
         )
+
+
+# ===========================================================================
+# Shared error handler helper
+# ===========================================================================
+
+def _bouncie_error_response(exc):
+    if isinstance(exc, BouncieNotAuthorized):
+        return Response({"error": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    if isinstance(exc, BouncieAPIError):
+        return Response({"error": exc.detail}, status=exc.status_code)
+    return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+# Vehicle views
+# ===========================================================================
+
+class VehicleListView(APIView):
+    """
+    GET /bouncie/vehicles/
+    Returns all vehicles connected to the Bouncie account.
+    Accessible by any authenticated user.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            data = bouncie_service.get_all_vehicles()
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+class VehicleDetailView(APIView):
+    """
+    GET /bouncie/vehicles/{imei}/
+    Returns details for a single vehicle.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, imei):
+        try:
+            data = bouncie_service.get_vehicle(imei)
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+# ===========================================================================
+# Live location views
+# ===========================================================================
+
+class VehicleLiveLocationView(APIView):
+    """
+    GET /bouncie/vehicles/{imei}/location/
+    Returns live location + stats for a single vehicle:
+      lat, lon, heading, speed, isMoving, battery, lastUpdated
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, imei):
+        try:
+            data = bouncie_service.get_vehicle_stats(imei)
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+class AllVehiclesLiveLocationView(APIView):
+    """
+    GET /bouncie/vehicles/location/
+    Returns live location for ALL vehicles in one call.
+    [
+      { imei, customVehicleName, vin, location: {lat, lon, heading, speed, isMoving}, lastUpdated },
+      ...
+    ]
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            data = bouncie_service.get_all_vehicles_live_location()
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+# ===========================================================================
+# Trip views
+# ===========================================================================
+
+class VehicleTripsView(APIView):
+    """
+    GET /bouncie/vehicles/{imei}/trips/
+    Returns trip history for a vehicle.
+
+    Optional query params:
+      starts_after    : ISO 8601  e.g. 2026-01-01T00:00:00.000Z
+      ends_before     : ISO 8601  (window must be ≤ 7 days)
+      gps_format      : polyline (default) | geojson
+      transaction_id  : fetch a single specific trip
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, imei):
+        try:
+            data = bouncie_service.get_trips(
+                imei=imei,
+                starts_after=request.query_params.get("starts_after"),
+                ends_before=request.query_params.get("ends_before"),
+                gps_format=request.query_params.get("gps_format", "polyline"),
+                transaction_id=request.query_params.get("transaction_id"),
+            )
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+class VehicleLocationHistoryView(APIView):
+    """
+    GET /bouncie/vehicles/{imei}/location/history/
+    Returns all GPS coordinates the vehicle has visited, grouped by trip.
+
+    Bouncie stores historical positions inside trip records (gps-format=geojson).
+    The window between starts_after and ends_before must be ≤ 7 days.
+    Defaults to the last 7 days if no dates are provided.
+
+    Optional query params:
+      starts_after  : ISO 8601  e.g. 2026-01-01T00:00:00.000Z
+      ends_before   : ISO 8601
+
+    Response:
+    [
+      {
+        "transactionId": "...",
+        "startTime": "...",
+        "endTime": "...",
+        "distance": 12.5,
+        "coordinates": [ [lon, lat], [lon, lat], ... ]
+      },
+      ...
+    ]
+    Note: coordinates are [longitude, latitude] per GeoJSON spec.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, imei):
+        try:
+            data = bouncie_service.get_vehicle_location_history(
+                imei=imei,
+                starts_after=request.query_params.get("starts_after"),
+                ends_before=request.query_params.get("ends_before"),
+            )
+            return Response(data, status=status.HTTP_200_OK)
+        except (BouncieNotAuthorized, BouncieAPIError) as exc:
+            return _bouncie_error_response(exc)
+
+
+class BouncieWebhookView(APIView):
+    """
+    POST /bouncie/webhook/
+
+    Validates the Authorization header against settings.BOUNCIE_WEBHOOK_KEY,
+    then delegates all event-specific logic to bouncie/webhook.py.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # --- auth ---
+        webhook_key = settings.BOUNCIE_WEBHOOK_KEY
+        auth_header = (
+            request.headers.get("Authorization")
+            or request.headers.get("X-Bouncie-Authorization", "")
+        )
+        if webhook_key and auth_header != webhook_key:
+            return Response(
+                {"detail": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        payload = request.data  # DRF already parsed JSON
+
+        if not payload.get("imei"):
+            return Response(
+                {"detail": "Missing imei"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        event_type = bouncie_webhook.dispatch(payload)
+
+        return Response({"status": "ok", "eventType": event_type}, status=status.HTTP_200_OK)
