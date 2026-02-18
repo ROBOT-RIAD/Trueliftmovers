@@ -47,7 +47,6 @@ htmlcov/
 # Environments
 .env
 *.env
-.env.*
 
 # Editor directories and files
 .vscode/
@@ -108,3 +107,4 @@ secrets.json
 
 tmp/
 temp/
+Media/
