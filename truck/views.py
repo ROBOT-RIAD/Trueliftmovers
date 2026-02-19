@@ -7,6 +7,9 @@ from rest_framework import status,permissions
 from accounts.response import success_response
 from .serializers import TruckSerializer,PriceManagementsSerializer,MoversManagemnetSerializer
 from .models import Truck,PriceManagement,MoversManagements
+from django.conf import settings
+from .tasks import process_bouncie_event
+from rest_framework.response import Response
 
 
 #swagger
@@ -365,3 +368,28 @@ class MoversManagementDetailAPIView(APIView):
             data={},
             status_code=status.HTTP_200_OK
         )
+
+
+# views.py
+
+class BouncieWebhookView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        webhook_key = settings.BOUNCIE_WEBHOOK_KEY
+        auth_header = request.headers.get("Authorization", "")
+
+        if webhook_key and auth_header != webhook_key:
+            return Response({"detail": "Unauthorized"}, status=401)
+
+        payload = request.data
+
+        process_bouncie_event.delay(payload)
+
+        return Response({"status": "ok"})
+
+
+
+
+
+

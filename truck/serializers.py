@@ -8,7 +8,7 @@ class TruckSerializer(serializers.ModelSerializer):
     class Meta:
         model = Truck
         fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at')
+        read_only_fields = ('created_at','updated_at','live_lat','live_lon','live_speed','live_heading','live_fuel','last_location_update',)
 
     def validate(self, attrs):
         

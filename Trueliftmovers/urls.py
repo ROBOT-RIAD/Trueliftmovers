@@ -21,7 +21,7 @@ from rest_framework import permissions
 from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from bouncie.views import BouncieCallbackView
+
 
 
 
@@ -46,10 +46,7 @@ urlpatterns = [
     path('', include("accounts.urls")),
     path('adminapi/', include("adminapi.urls")),
     path('userapi/', include("userapi.urls")),
-    path('bouncie/', include("bouncie.urls")),   # /bouncie/authorize/
-    path('callback/', BouncieCallbackView.as_view(), name='bouncie-callback'),  # Must match Bouncie portal redirect URI exactly
-
-
+    
 
     # Swagger/OpenAPI URLs
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

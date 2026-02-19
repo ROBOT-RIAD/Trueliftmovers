@@ -15,8 +15,26 @@ class Truck(models.Model):
     insurance_details = models.FileField(upload_to='./media/insurance_docs/', null=True, blank=True)
     truck_type = models.CharField(max_length=50,choices=TRUCK_TYPE_CHOICES,default="box",null=True, blank=True)
 
+
+    #bounci
+    imei = models.CharField(max_length=20, unique=True, db_index=True,null=True, blank=True)
+
+    live_lat = models.FloatField(null=True, blank=True)
+    live_lon = models.FloatField(null=True, blank=True)
+    live_speed = models.FloatField(null=True, blank=True)
+    live_heading = models.FloatField(null=True, blank=True)
+    live_fuel = models.FloatField(null=True, blank=True)
+    last_location_update = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["imei"]),
+            models.Index(fields=["status"]),
+        ]
 
     def __str__(self):
         return f"{self.truck_number_plate} - {self.driver_name}"
