@@ -377,19 +377,18 @@ class BouncieWebhookView(APIView):
 
     def post(self, request):
         webhook_key = settings.BOUNCIE_WEBHOOK_KEY
+        
         auth_header = request.headers.get("Authorization", "")
 
         if webhook_key and auth_header != webhook_key:
             return Response({"detail": "Unauthorized"}, status=401)
 
         payload = request.data
+        print("==========",payload)
 
         process_bouncie_event.delay(payload)
 
         return Response({"status": "ok"})
-
-
-
 
 
 

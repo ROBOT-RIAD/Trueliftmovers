@@ -1,8 +1,10 @@
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
+from truck.models import Truck
 from channels.db import database_sync_to_async
-from channels.exceptions import DenyConnection
+import asyncio
+from booking.models import Booking
 
 
 
@@ -32,32 +34,48 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event["data"]))
 
 
-class VehicleLocationConsumer(AsyncWebsocketConsumer):
-    """
-    WebSocket consumer for real-time vehicle location/event updates.
-    Connect via:  ws/vehicle/{imei}/
-    Authentication: JWT token in query param ?token= or Sec-WebSocket-Protocol header.
-    """
+
+
+class TruckLocationConsumer(AsyncWebsocketConsumer):
+    @database_sync_to_async
+    def get_user_trucks(self, user):
+        if user.is_staff:
+            return list(Truck.objects.filter(imei__isnull=False))
+        else:
+            bookings = Booking.objects.filter(user=user, status="start").select_related("truck")
+            trucks = [b.truck for b in bookings if b.truck and b.truck.imei]
+            return trucks
 
     async def connect(self):
-        self.imei = self.scope["url_route"]["kwargs"]["imei"]
-        self.group_name = f"vehicle_{self.imei}"
-        user = self.scope.get("user")
-        if user is None or user.is_anonymous:
-            await self.close()
-            return
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.channel_layer.group_add("truck_updates", self.channel_name)
         await self.accept()
 
+        user = self.scope["user"]
+        trucks = await self.get_user_trucks(user)
+
+        for truck in trucks:
+            await self.send(text_data=json.dumps({
+                "imei": truck.imei,
+                "truck_number_plate": truck.truck_number_plate,
+                "driver_name": truck.driver_name,
+                "live_lat": truck.live_lat,
+                "live_lon": truck.live_lon,
+                "live_speed": truck.live_speed,
+                "live_heading": truck.live_heading,
+                "last_location_update": str(truck.last_location_update),
+            }))
+
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.channel_layer.group_discard("truck_updates", self.channel_name)
 
-    async def vehicle_location(self, event):
-        """Handles real-time GPS points from tripData webhook events."""
-        await self.send(text_data=json.dumps({"type": "location", "data": event["data"]}))
+    async def truck_update(self, event):
+        user = self.scope["user"]
+        truck_imei = event["data"]["imei"]
 
-    async def vehicle_event(self, event):
-        """Handles tripStart, tripEnd, deviceConnect, and other event types."""
-        await self.send(text_data=json.dumps({"type": "event", "data": event["data"]}))
+        if not truck_imei:
+            return
 
+        trucks = await self.get_user_trucks(user)
+        if any(truck.imei == truck_imei for truck in trucks):
+            await self.send(text_data=json.dumps(event["data"]))
 

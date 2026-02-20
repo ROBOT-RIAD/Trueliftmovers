@@ -160,7 +160,11 @@ ALLOWED_HOSTS = ['*']
 WSGI_APPLICATION = 'Trueliftmovers.wsgi.application'
 ASGI_APPLICATION = 'Trueliftmovers.asgi.application'
 
+from corsheaders.defaults import default_headers
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "ngrok-skip-browser-warning",
+]
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -276,11 +280,4 @@ STRIPE_SECRET_KEY=os.getenv("STRIPE_SECRET_KEY")
 
 STRIPE_WEBHOOK_SECRET=os.getenv("STRIPE_WEBHOOK_SECRET")
 
-# ---------------------------------------------------------------------------
-# Bouncie OAuth2 settings
-# ---------------------------------------------------------------------------
-BOUNCIE_CLIENT_ID = os.getenv("CLIENT_ID", "")
-BOUNCIE_CLIENT_SECRET = os.getenv("CLIENT_SECRET", "")
-BOUNCIE_REDIRECT_URI = os.getenv("REDIRECT_URLS", "http://localhost:8004/callback/")
-BOUNCIE_API_BASE_URL = "https://api.bouncie.dev/v1"
-BOUNCIE_WEBHOOK_KEY = os.getenv("API_KEY", "")  # Validates incoming webhook requests
+BOUNCIE_WEBHOOK_KEY=os.getenv("BOUNCIE_WEBHOOK_KEY")

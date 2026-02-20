@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Truck Live Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2N1Dwx19xxwRVAhCCu-z-NkZY5pfC4Zo"></script>
+</head>
+<body>
+    <h2>Truck Live Location Map</h2>
+    <div id="map" style="width:100%; height:600px;"></div>
+
+    <script>
+        let map;
+        let markers = {};       // Truck IMEI অনুযায়ী Marker
+        let trucksData = {};    // Truck IMEI অনুযায়ী last known data
+        const truckIcon = "./image.png"; // আপনার truck image path
+        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcxNjMwMzY0LCJpYXQiOjE3NzE2MTU5NjQsImp0aSI6IjM1NjQ1MTc5MmY5MDRiOGU4OWIyMjE2MWJhNGRjZTFjIiwidXNlcl9pZCI6IjIiLCJpZCI6MiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4ifQ.R_H1zfz8oYY41iEnUlaV1kYzNnVTWCpo5suBtkkUY1g";
+        const wsBaseUrl = `wss://sacred-renewing-dove.ngrok-free.app/ws/vehicle/?token=${token}`;
+        let ws = null;
+        let reconnectInterval = 5000; // 5 seconds
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 25.774, lng: -80.193 },
+                zoom: 10,
+            });
+        }
+
+        initMap();
+
+        function connectWebSocket() {
+            ws = new WebSocket(wsBaseUrl);
+
+            ws.onopen = () => {
+                console.log("WebSocket connected");
+            };
+
+            ws.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                trucksData[data.imei] = data;
+
+                if (markers[data.imei]) {
+                    markers[data.imei].setPosition({lat: data.live_lat, lng: data.live_lon});
+                    markers[data.imei].setTitle(data.truck_number_plate + " - " + data.driver_name);
+                } else {
+                    markers[data.imei] = new google.maps.Marker({
+                        position: {lat: data.live_lat, lng: data.live_lon},
+                        map: map,
+                        title: data.truck_number_plate + " - " + data.driver_name,
+                        icon: {
+                            url: truckIcon,
+                            scaledSize: new google.maps.Size(40, 40)
+                        }
+                    });
+                }
+            };
+
+            ws.onclose = () => {
+                console.log(`WebSocket disconnected, reconnecting in ${reconnectInterval/1000} sec...`);
+                setTimeout(() => connectWebSocket(), reconnectInterval);
+            };
+
+            ws.onerror = (err) => {
+                console.error("WebSocket error:", err);
+                ws.close(); // Trigger onclose to reconnect
+            };
+        }
+
+        // Start WebSocket connection
+        connectWebSocket();
+
+        // Fallback: every 5 seconds update existing markers
+        setInterval(() => {
+            for (let imei in trucksData) {
+                const data = trucksData[imei];
+                if (markers[imei]) {
+                    markers[imei].setPosition({lat: data.live_lat, lng: data.live_lon});
+                }
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

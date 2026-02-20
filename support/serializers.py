@@ -47,3 +47,10 @@ class SupportSerializer(serializers.Serializer):
 
         return support
     
+
+
+class SupportUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Support
+        fields = ["resolved"]
+        

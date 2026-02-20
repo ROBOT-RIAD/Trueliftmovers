@@ -8,6 +8,8 @@ from booking.views import BookingAdminUpdateView,BookingAgreementDetailView,Book
 
 from .views import DeshboardSummaryAPIview,MonthlyTruckBookingAPIView,YearlyDashboardAPIView,YearlyDashboardRevenueAPIView,UserRetrieveUpdateDeleteAPIView, UserListAPIView
 
+from support.views import SupportListAPIView, SupportUpdateAPIView
+
 urlpatterns = [
    path("terms/", TermsAPIView.as_view(), name="terms"),
    path("privacy/", PrivacyAPIView.as_view(), name="privacy"),
@@ -43,6 +45,10 @@ urlpatterns = [
 
    path('users/', UserListAPIView.as_view(), name='user-list'),
    path('users/<int:user_id>/', UserRetrieveUpdateDeleteAPIView.as_view(), name='user-detail-update-delete'),
+
+
+   path('support/all/', SupportListAPIView.as_view(), name='support-list'),
+   path('support/<int:pk>/update/', SupportUpdateAPIView.as_view(), name='support-update'),
 
 
 

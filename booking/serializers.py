@@ -203,6 +203,7 @@ class TruckNestedSerializer(serializers.ModelSerializer):
         fields = ['truck_number_plate', 'truck_size', 'truck_capacity', 'driver_name', 'driver_phone_number']
 
 
+
 class PaymentNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment

@@ -1,5 +1,6 @@
 from django.urls import include, path
 from .views import RegisterView,LoginAPIView,CustomTokenRefresView,ChangePasswordApiView,ForgetPasswordSendOTP, ForgetPasswordVerifyOTP, ForgetPasswordReset ,ProfileAPIView,DeleteAccountAPIView
+from truck.views import BouncieWebhookView
 
 
 
@@ -22,5 +23,7 @@ urlpatterns = [
 
     #delete account
     path('delete-account/', DeleteAccountAPIView.as_view(), name='delete-account'),
+
+    path("webhooks/bouncie/",BouncieWebhookView.as_view(),name="bouncie-webhook"),
     
 ]

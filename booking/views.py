@@ -323,7 +323,7 @@ class BookingStartEndView(APIView):
     )
 
     def patch(self, request, booking_id):
-        booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+        booking = get_object_or_404(Booking, id=booking_id)
         serializer = BookingstartendSerializer(instance=booking, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_booking = serializer.save()

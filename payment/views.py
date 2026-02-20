@@ -11,6 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from .serializers import CheckoutSessionSerializer,PaymentSuccessSerializer,PaymentDetailSerializer
 from notifications.tasks import create_notification_task
+from rest_framework.parsers import MultiPartParser,FormParser
 
 stripe.api_key=settings.STRIPE_SECRET_KEY
 
@@ -28,6 +29,7 @@ def custom_error_response(error_type, message, status_code=status.HTTP_400_BAD_R
 # Create your views here.
 
 class CreateCheckoutSessionView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
     @swagger_auto_schema(
         operation_summary="Create Stripe Checkout Session",
         operation_description="Create a checkout session for truck or movers payment.",
@@ -102,6 +104,7 @@ class CreateCheckoutSessionView(APIView):
 
 
 class PaymentSuccessView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
     @swagger_auto_schema(
         operation_summary="Handle Stripe Payment Success",
         operation_description="Verify Stripe session, update payment and booking status.",

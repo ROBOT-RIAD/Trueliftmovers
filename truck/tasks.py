@@ -1,6 +1,10 @@
 from celery import shared_task
 from django.utils import timezone
 from .models import Truck
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+
 
 @shared_task
 def process_bouncie_event(payload):
@@ -8,19 +12,22 @@ def process_bouncie_event(payload):
     if payload.get("eventType") != "tripData":
         return
 
-    imei = payload.get("imei")
+    imei = str(payload.get("imei")).strip()
 
-    stats = payload.get("stats", {})
-    location = stats.get("location", {})
+    data_points = payload.get("data", [])
+    if not data_points:
+        return
 
-    lat = location.get("lat")
-    lon = location.get("lon")
+    latest = data_points[-1]   # last point
+    gps = latest.get("gps", {})
 
-    Truck.objects.filter(imei=imei).update(
+    lat = gps.get("lat")
+    lon = gps.get("lon")
+
+    updated = Truck.objects.filter(imei=imei).update(
         live_lat=lat,
         live_lon=lon,
-        live_speed=stats.get("speed"),
-        live_heading=location.get("heading"),
-        live_fuel=stats.get("fuelLevel"),
+        live_speed=latest.get("speed"),
+        live_heading=gps.get("heading"),
         last_location_update=timezone.now()
     )

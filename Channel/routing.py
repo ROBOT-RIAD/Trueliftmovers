@@ -3,5 +3,5 @@ from . import consumers
 
 websocket_urlpatterns = [
     re_path(r"ws/notifications/", consumers.NotificationConsumer.as_asgi()),
-    re_path(r"ws/vehicle/(?P<imei>[^/]+)/$", consumers.VehicleLocationConsumer.as_asgi()),
+    re_path(r"ws/vehicle/", consumers.TruckLocationConsumer.as_asgi()),
 ]
