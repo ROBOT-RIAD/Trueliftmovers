@@ -1,65 +1,88 @@
 version: "3.9"
 
 services:
-  # PostgreSQL DB Service
+
+  # PostgreSQL
   db:
     image: postgres:16
-    restart: always
+    container_name: truelift_db
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: Trueliftmove
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: MDriadhossen1@
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    ports:
-      - "5431:5432"
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
-  # Django Web Service
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: >
-      sh -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+  # Redis
+  redis:
+    image: redis:7
+    container_name: truelift_redis
+    restart: unless-stopped
     volumes:
-      - .:/app
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+  # Django (ASGI Daphne)
+  web:
+    build: .
+    container_name: truelift_web
+    restart: unless-stopped
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      daphne -b 0.0.0.0 -p 8000 Trueliftmovers.asgi:application
+      "
+    env_file:
+      - .env
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     ports:
       - "8000:8000"
     depends_on:
-      - db
-    environment:
-      - DEBUG=1
-      - DB_NAME=Trueliftmove
-      - DB_USER=myuser
-      - DB_PASSWORD=MDriadhossen1@
-      - DB_HOST=db
-      - DB_PORT=5432
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  # Redis Service
-  redis:
-    image: redis:6
-    volumes:
-      - ./tmp/redis:/data
-
-  # Celery Worker Service
+  # Celery Worker
   celery:
     build: .
-    command: celery -A Trueliftmovers worker --loglevel=info --concurrency=4 --logfile=tmp/celery-worker.log
+    container_name: truelift_celery
+    restart: unless-stopped
+    command: celery -A Trueliftmovers worker -l info --concurrency=4
+    env_file:
+      - .env
     depends_on:
-      - web
       - redis
-    volumes:
-      - .:/app
+      - db
 
-  # Celery Beat Service (for periodic tasks)
+  # Celery Beat
   celery-beat:
     build: .
-    command: celery -A Trueliftmovers beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    container_name: truelift_celery_beat
+    restart: unless-stopped
+    command: celery -A Trueliftmovers beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
     depends_on:
-      - web
       - redis
-    volumes:
-      - .:/app
+      - db
 
 volumes:
   postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
