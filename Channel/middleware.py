@@ -1,6 +1,5 @@
 from channels.middleware import BaseMiddleware
 from asgiref.sync import sync_to_async
-from rest_framework_simplejwt.tokens import AccessToken
 from urllib.parse import parse_qs
 from django.contrib.auth.models import AnonymousUser
 
@@ -10,6 +9,7 @@ class JWTAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
         from django.contrib.auth import get_user_model
         User = get_user_model()
+        from rest_framework_simplejwt.tokens import AccessToken
         headers = dict(scope["headers"])
         token = None
         selected_protocol = None
