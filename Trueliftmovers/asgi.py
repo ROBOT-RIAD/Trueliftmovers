@@ -7,7 +7,7 @@ from Channel.middleware import JWTAuthMiddleware, ProtocolAcceptMiddleware
 
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'airestaurant.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Trueliftmovers.settings')
 
 
 
