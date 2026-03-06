@@ -3,8 +3,8 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 import asyncio
-from truck.models import Truck
-from booking.models import Booking
+# from truck.models import Truck
+# from booking.models import Booking
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
