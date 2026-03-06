@@ -8,37 +8,66 @@ from booking.models import Booking
 
 
 
+# class NotificationConsumer(AsyncWebsocketConsumer):
+#     async def connect(self):
+#         user = self.scope["user"]
+
+#         if user is None or user.is_anonymous:
+#             await self.close()
+#             return
+
+#         self.group_name = f"user_{user.id}"
+#         await self.channel_layer.group_add(self.group_name, self.channel_name)
+
+#         if user.role == "admin":
+#             await self.channel_layer.group_add("admin_notifications", self.channel_name)
+
+#         await self.accept()
+
+#     async def disconnect(self, close_code):
+#         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+#         if self.scope["user"].role == "admin":
+#             await self.channel_layer.group_discard("admin_notifications", self.channel_name)
+
+#     async def send_notification(self, event):
+#         await self.send(text_data=json.dumps(event["data"]))
+
+
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        user = self.scope["user"]
-
-        if user is None or user.is_anonymous:
+        user = self.scope.get("user")
+        if not user or user.is_anonymous:
             await self.close()
             return
 
         self.group_name = f"user_{user.id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
 
-        if user.role == "admin":
+        if getattr(user, "role", None) == "admin":
             await self.channel_layer.group_add("admin_notifications", self.channel_name)
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if hasattr(self, "group_name"):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-        if self.scope["user"].role == "admin":
+        user = self.scope.get("user")
+        if user and getattr(user, "role", None) == "admin":
             await self.channel_layer.group_discard("admin_notifications", self.channel_name)
 
     async def send_notification(self, event):
         await self.send(text_data=json.dumps(event["data"]))
 
 
-
-
 class TruckLocationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_user_trucks(self, user):
+
+        if not user or user.is_anonymous:
+            return []
+        
         if user.is_staff:
             return list(Truck.objects.filter(imei__isnull=False))
         else:
@@ -47,10 +76,15 @@ class TruckLocationConsumer(AsyncWebsocketConsumer):
             return trucks
 
     async def connect(self):
+        user = self.scope["user"]
+
+        if not user or user.is_anonymous:
+            await self.close()
+            return
+
         await self.channel_layer.group_add("truck_updates", self.channel_name)
         await self.accept()
 
-        user = self.scope["user"]
         trucks = await self.get_user_trucks(user)
 
         for truck in trucks:

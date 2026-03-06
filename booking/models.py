@@ -21,12 +21,14 @@ class Booking(models.Model):
     pickup_address = models.TextField()
     pickup_lat = models.DecimalField(max_digits=9, decimal_places=6)
     pickup_lng = models.DecimalField(max_digits=9, decimal_places=6)
+    pickup_elevator_stair = models.CharField(max_length=100, null=True, blank=True)
 
     
     # Drop-off Info
     drop_off_address = models.TextField()
     drop_lat = models.DecimalField(max_digits=9, decimal_places=6)
     drop_lng = models.DecimalField(max_digits=9, decimal_places=6)
+    drop_elevator_stair = models.CharField(max_length=100, null=True, blank=True)
 
 
     # Booking Details

@@ -13,7 +13,7 @@
         let markers = {};       // Truck IMEI অনুযায়ী Marker
         let trucksData = {};    // Truck IMEI অনুযায়ী last known data
         const truckIcon = "./image.png"; // আপনার truck image path
-        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcxNjMwMzY0LCJpYXQiOjE3NzE2MTU5NjQsImp0aSI6IjM1NjQ1MTc5MmY5MDRiOGU4OWIyMjE2MWJhNGRjZTFjIiwidXNlcl9pZCI6IjIiLCJpZCI6MiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4ifQ.R_H1zfz8oYY41iEnUlaV1kYzNnVTWCpo5suBtkkUY1g";
+        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcxNzMwODQ2LCJpYXQiOjE3NzE3MTY0NDYsImp0aSI6IjFhZTI1OTFkMThiZDQzNmQ5OGQ1OTU0ZDg4ZWNlOTFlIiwidXNlcl9pZCI6IjIiLCJpZCI6MiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4ifQ.dD_81zm9kJoVq-ALUFE1YjMDyAXAk1E-Yl5EVwEstFs";
         const wsBaseUrl = `wss://sacred-renewing-dove.ngrok-free.app/ws/vehicle/?token=${token}`;
         let ws = null;
         let reconnectInterval = 5000; // 5 seconds

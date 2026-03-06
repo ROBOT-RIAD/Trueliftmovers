@@ -3,6 +3,7 @@ from accounts.models import User
 from asgiref.sync import sync_to_async
 from rest_framework_simplejwt.tokens import AccessToken
 from urllib.parse import parse_qs
+from django.contrib.auth.models import AnonymousUser
 
 
 
@@ -35,9 +36,9 @@ class JWTAuthMiddleware(BaseMiddleware):
                 user = await sync_to_async(User.objects.get)(id=access_token["user_id"])
                 scope["user"] = user
             except Exception:
-                scope["user"] = None
+                scope["user"] = AnonymousUser()
         else:
-            scope["user"] = None
+            scope["user"] = AnonymousUser()
 
         scope["subprotocol"] = selected_protocol
         return await super().__call__(scope, receive, send)

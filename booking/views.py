@@ -236,7 +236,7 @@ class RejectBookingView(APIView):
         tags=["Booking"]
     )
     def patch(self, request, booking_id):
-        booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+        booking = get_object_or_404(Booking, id=booking_id)
         serializer = BookingRejectSerializer(instance=booking, data={}, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_booking=serializer.save()

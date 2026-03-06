@@ -19,7 +19,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields =['preference_track','movers','pickup_time','pickup_address','pickup_lat','pickup_lng','drop_off_address','drop_lat','drop_lng','movable_items',]
+        fields =['preference_track','movers','pickup_time','pickup_address','pickup_lat','pickup_lng','pickup_elevator_stair','drop_off_address','drop_lat','drop_lng','drop_elevator_stair','movable_items',]
 
     
     def validate(self, attrs):
@@ -218,7 +218,7 @@ class BookingGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = ["id","user","truck","preference_track","movers","pickup_time","pickup_address","pickup_lat","pickup_lng","drop_off_address","drop_lat","drop_lng","movable_items","initial_price","final_price","movers_total","status","start_time","end_time","truck_payment_status","admin_note","mover_payment_status","overview_polyline","distance_meter","duration_second","payments","created_at","updated_at", 
+        fields = ["id","user","truck","preference_track","movers","pickup_time","pickup_address","pickup_lat","pickup_lng",'pickup_elevator_stair',"drop_off_address","drop_lat","drop_lng",'drop_elevator_stair',"movable_items","initial_price","final_price","movers_total","status","start_time","end_time","truck_payment_status","admin_note","mover_payment_status","overview_polyline","distance_meter","duration_second","payments","created_at","updated_at", 
         ]
     def get_payments(self, obj):
         payments = obj.payments.all()
