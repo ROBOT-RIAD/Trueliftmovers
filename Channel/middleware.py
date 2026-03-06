@@ -1,10 +1,10 @@
 from channels.middleware import BaseMiddleware
-from accounts.models import User
 from asgiref.sync import sync_to_async
 from rest_framework_simplejwt.tokens import AccessToken
 from urllib.parse import parse_qs
 from django.contrib.auth.models import AnonymousUser
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 
 class JWTAuthMiddleware(BaseMiddleware):
