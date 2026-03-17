@@ -165,24 +165,30 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #####################################################################################################################################
 
-ALLOWED_HOSTS = ['*']
 
 WSGI_APPLICATION = 'Trueliftmovers.wsgi.application'
 ASGI_APPLICATION = 'Trueliftmovers.asgi.application'
 
 from corsheaders.defaults import default_headers
 
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "ngrok-skip-browser-warning",
-]
+# CORS_ALLOW_HEADERS = list(default_headers) + [
+#     "ngrok-skip-browser-warning",
+# ]
 
-CORS_ORIGIN_ALLOW_ALL = True
+ALLOWED_HOSTS = ["api.trueliftmovers.com"]
+
+CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5179",
-    "https://sacred-renewing-dove.ngrok-free.app",
+    "https://api.trueliftmovers.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://api.trueliftmovers.com",
+    "http://localhost:5179",
+]
 
 
 
@@ -216,7 +222,7 @@ REST_FRAMEWORK = {
 
 
 SWAGGER_SETTINGS = {
-    'DEFAULT_API_URL': 'https://72.61.78.253:8000',
+    'DEFAULT_API_URL': 'https://api.trueliftmovers.com',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
