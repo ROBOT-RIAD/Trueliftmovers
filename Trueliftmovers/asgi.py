@@ -59,11 +59,6 @@ application = ProtocolTypeRouter({
                 URLRouter(routing.websocket_urlpatterns)
             )
         ),
-        allowed_hosts=[
-            "api.trueliftmovers.com",
-            "localhost",
-            "127.0.0.1",
-        ]
     ),
 })
 
