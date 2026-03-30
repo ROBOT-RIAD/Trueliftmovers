@@ -26,7 +26,7 @@
 
 
 
-# Trueliftmovers/asgi.py
+# # Trueliftmovers/asgi.py
 
 import os
 from django.core.asgi import get_asgi_application
@@ -58,6 +58,14 @@ application = ProtocolTypeRouter({
             ProtocolAcceptMiddleware(                 # if you really need it
                 URLRouter(routing.websocket_urlpatterns)
             )
-        )
+        ),
+        allowed_hosts=[
+            "api.trueliftmovers.com",
+            "localhost",
+            "127.0.0.1",
+        ]
     ),
 })
+
+
+
